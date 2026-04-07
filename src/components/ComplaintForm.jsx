@@ -27,7 +27,7 @@ function ComplaintForm({ onSave }) {
   };
 
   try {
-    const res = await axios.post('http://localhost:5000/api/complaints/add', complaintData, {
+    const res = await axios.post('https://campus-backend-2-w9ce.onrender.com/api/complaints/add', complaintData, {
       // 2. SEND THE TOKEN IN THE HEADER
       headers: {
         Authorization: `Bearer ${token}` 
