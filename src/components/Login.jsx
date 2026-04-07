@@ -13,7 +13,7 @@ const Login = ({ setIsAuthenticated, theme, onToggleTheme }) => {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
+      const response = await axios.post('https://campus-backend-2-w9ce.onrender.com/api/auth/login', {
         email,
         password
       });
