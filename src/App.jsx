@@ -9,6 +9,12 @@ import ComplaintList from "./components/ComplaintList";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 
+// --- 0. DYNAMIC API CONFIGURATION ---
+// This ensures your app works on BOTH localhost and your live Vercel site.
+const API_BASE_URL = window.location.hostname === "localhost" 
+  ? "http://localhost:5000" 
+  : "https://campus-backend-2-w9ce.onrender.com";
+
 // --- 1. UTILITY: SAFE USER RETRIEVAL ---
 const getStoredUser = () => {
   try {
@@ -35,12 +41,10 @@ const RoleRoute = ({ requiredRole, children }) => {
   const user = getStoredUser();
   const token = localStorage.getItem('token');
 
-  // If no token, kick to login
   if (!token || !user) {
     return <Navigate to="/" />;
   }
 
-  // If they are on the wrong dashboard, send them to their correct one
   if (user.role !== requiredRole) {
     return <Navigate to={`/${user.role}-dashboard`} />;
   }
@@ -105,11 +109,14 @@ function App() {
 
   const fetchComplaints = async () => {
     const user = getStoredUser();
-    if (!user) return;
+    const token = localStorage.getItem('token');
+    if (!user || !token) return;
 
     try {
-      // Use one source of truth from backend to avoid route/id mismatch
-      const response = await axios.get('http://localhost:5000/api/complaints/all');
+      // UPDATED: Used dynamic API_BASE_URL and added Authorization Header
+      const response = await axios.get(`${API_BASE_URL}/api/complaints/all`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const all = response.data || [];
 
       if (user.role === 'student') {
@@ -128,16 +135,11 @@ function App() {
     }
   };
 
-  // Fetch data whenever authentication state changes
   useEffect(() => {
     if (isAuthenticated) {
-      setTimeout(() => {
-        fetchComplaints();
-      }, 0);
+      fetchComplaints();
     } else {
-      setTimeout(() => {
-        setAllComplaints([]);
-      }, 0);
+      setAllComplaints([]);
     }
   }, [isAuthenticated]);
 
@@ -145,8 +147,12 @@ function App() {
   const addComplaint = (newEntry) => setAllComplaints((prev) => [newEntry, ...prev]);
 
   const deleteComplaint = async (id) => {
+    const token = localStorage.getItem('token');
     try {
-      await axios.delete(`http://localhost:5000/api/complaints/${id}`);
+      // UPDATED: Used dynamic API_BASE_URL and token
+      await axios.delete(`${API_BASE_URL}/api/complaints/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setAllComplaints(prev => prev.filter((item) => (item._id || item.id) !== id));
     } catch { 
       alert("Could not delete. ❌"); 
@@ -154,8 +160,12 @@ function App() {
   };
 
   const resolveComplaint = async (id) => {
+    const token = localStorage.getItem('token');
     try {
-      const response = await axios.patch(`http://localhost:5000/api/complaints/${id}`);
+      // UPDATED: Used dynamic API_BASE_URL and token
+      const response = await axios.patch(`${API_BASE_URL}/api/complaints/${id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setAllComplaints(prev => prev.map((item) => 
         (item._id || item.id) === id ? response.data : item
       ));
@@ -192,7 +202,6 @@ function App() {
         {theme === 'light' ? 'Dark' : 'Light'}
       </button>
       <Routes>
-        {/* Public Routes */}
         <Route path="/" element={
           isAuthenticated
             ? <Navigate to={`/${getStoredUser()?.role || 'student'}-dashboard`} replace />
@@ -205,12 +214,10 @@ function App() {
             : <Signup theme={theme} onToggleTheme={toggleTheme} />
         } />
 
-        {/* Private Student Route */}
         <Route path="/student-dashboard" element={
           <RoleRoute requiredRole="student">
             <DashboardView
               role="student"
-              theme={theme}
               onLogout={handleLogout}
               stats={stats}
               complaints={allComplaints}
@@ -221,12 +228,10 @@ function App() {
           </RoleRoute>
         } />
         
-        {/* Private Admin Route */}
         <Route path="/admin-dashboard" element={
           <RoleRoute requiredRole="admin">
             <DashboardView
               role="admin"
-              theme={theme}
               onLogout={handleLogout}
               stats={stats}
               complaints={allComplaints}
@@ -237,7 +242,6 @@ function App() {
           </RoleRoute>
         } />
 
-        {/* Catch-all Redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

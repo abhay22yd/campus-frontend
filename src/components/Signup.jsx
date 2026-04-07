@@ -2,12 +2,16 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 
+// --- DYNAMIC API CONFIGURATION ---
+const API_BASE_URL = window.location.hostname === "localhost" 
+  ? "http://localhost:5000" 
+  : "https://campus-backend-2-w9ce.onrender.com";
+
 const Signup = ({ theme, onToggleTheme }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    // Removed role from here to prevent manual selection
   });
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -20,8 +24,8 @@ const Signup = ({ theme, onToggleTheme }) => {
     e.preventDefault();
     setError('');
     try {
-      // We explicitly send role: 'student' in the payload
-      const res = await axios.post('http://localhost:5000/api/auth/register', {
+      // UPDATED: Used dynamic API_BASE_URL instead of hardcoded localhost
+      const res = await axios.post(`${API_BASE_URL}/api/auth/register`, {
         ...formData,
         role: 'student' 
       });
@@ -80,8 +84,6 @@ const Signup = ({ theme, onToggleTheme }) => {
               className="input-ui mt-1"
             />
           </div>
-
-          {/* Role Select was removed from here */}
 
           <button 
             type="submit"
